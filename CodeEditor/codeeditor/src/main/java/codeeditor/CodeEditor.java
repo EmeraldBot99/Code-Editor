@@ -16,7 +16,7 @@ public class CodeEditor extends JFrame {
         // Set up the frame
         setTitle("Code Editor");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(400, 300);
+        setSize(1500, 900);
         setLocationRelativeTo(null);  // Center the window
 
         // Initialize components
@@ -52,7 +52,7 @@ public class CodeEditor extends JFrame {
         JMenuItem aboutItem = new JMenuItem("About");
         aboutItem.addActionListener(e -> 
             JOptionPane.showMessageDialog(this, 
-                "Code Editor\nVersion 1.0", 
+                "Code Editor\nVersion 0.1", 
                 "About", 
                 JOptionPane.INFORMATION_MESSAGE));
         helpMenu.add(aboutItem);
