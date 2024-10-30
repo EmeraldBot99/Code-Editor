@@ -10,7 +10,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-
+import java.util.regex.Pattern;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 public class CodeEditor extends JFrame {
     // Declare GUI components
     private JPanel mainPanel;
@@ -28,6 +30,8 @@ public class CodeEditor extends JFrame {
         initializeComponents();
         createMenuBar();
         layoutComponents();
+
+        setupSyntaxHighlighting();
     }
 
     //instance variables
@@ -54,12 +58,15 @@ public class CodeEditor extends JFrame {
         codeTextPane.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) {
                 lineNumbers.repaint();
+                highlighSyntax();
             }
             public void removeUpdate(DocumentEvent e) {
                 lineNumbers.repaint();
+                highlighSyntax();
             }
             public void changedUpdate(DocumentEvent e) {
                 lineNumbers.repaint();
+                highlighSyntax();
             }
         });
 
@@ -70,9 +77,70 @@ public class CodeEditor extends JFrame {
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
     }
 
-    // Custom component for line numbers
 
-    
+    //syntax highlighting
+    private StyleContext styleContext;
+    private Style defaultStyle;
+    private static final Pattern KEYWORDS = Pattern.compile("\\b(public|private|class|void|int|String)\\b");
+    private static final Pattern STRINGS = Pattern.compile("\"[^\"\\\\]*(\\\\.[^\"\\\\]*)*\"");
+    private static final Pattern NUMBERS = Pattern.compile("\\b\\d+\\b");
+    private static final Pattern COMMENTS = Pattern.compile("//.*?$|/\\*[\\s\\S]*?\\*/");
+  
+
+    private void setupSyntaxHighlighting() {
+        styleContext = new StyleContext();
+        defaultStyle = styleContext.getStyle(StyleContext.DEFAULT_STYLE);
+
+        // Create styles for different syntax elements
+        Style keywordStyle = styleContext.addStyle("keyword", defaultStyle);
+        StyleConstants.setForeground(keywordStyle, new Color(127, 0, 85)); // Purple for keywords
+
+        Style stringStyle = styleContext.addStyle("string", defaultStyle);
+        StyleConstants.setForeground(stringStyle, new Color(42, 161, 152)); // Green for strings
+
+        Style numberStyle = styleContext.addStyle("number", defaultStyle);
+        StyleConstants.setForeground(numberStyle, new Color(0, 128, 0)); // Dark green for numbers
+
+        Style commentStyle = styleContext.addStyle("comment", defaultStyle);
+        StyleConstants.setForeground(commentStyle, new Color(128, 128, 128)); // gray for numbers
+    }
+
+    private void highlightPattern(StyledDocument doc, Pattern pattern, String styleName){
+        try {
+            String text = doc.getText(0, doc.getLength());
+            java.util.regex.Matcher matcher = pattern.matcher(text);
+
+            while(matcher.find()){
+                doc.setCharacterAttributes(matcher.start(), matcher.end() - matcher.start(),
+                    styleContext.getStyle(styleName), false);
+            }
+        } catch (BadLocationException e){
+            e.printStackTrace();
+        }
+    }
+
+    private Timer highlightTimer;
+
+    private void highlighSyntax(){
+        if (highlightTimer != null && highlightTimer.isRunning()) {
+            highlightTimer.restart(); // Restart the timer if it is already running
+        } else {
+            highlightTimer = new Timer(100, e -> {
+                String text = codeTextPane.getText();
+                StyledDocument doc = codeTextPane.getStyledDocument();
+                doc.setCharacterAttributes(0, text.length(), defaultStyle, true);
+                highlightPattern(doc, KEYWORDS, "keyword");
+                highlightPattern(doc, STRINGS, "string");
+                highlightPattern(doc, NUMBERS, "number");
+                highlightPattern(doc, COMMENTS, "comment");
+            });
+            highlightTimer.setRepeats(false); // Only run once
+            highlightTimer.start(); // Start the timer
+        }
+    }
+
+
+    // Custom component for line numbers
    private class LineNumberComponent extends JPanel {
     private static final int MARGIN = 5;
     private final JTextPane textPane;
