@@ -1,6 +1,7 @@
 package codeeditor;
 
 import javax.swing.*;
+import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
@@ -9,12 +10,11 @@ import java.nio.file.Paths;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-
 public class CodeEditor extends JFrame {
     // Declare GUI components
     private JPanel mainPanel;
     private JMenuBar menuBar;
-    private JTextArea codeTextArea;
+    private JTextPane codeTextPane;  // Changed from JTextArea to JTextPane
     private JScrollPane scrollPane;
 
     public CodeEditor() {
@@ -26,8 +26,8 @@ public class CodeEditor extends JFrame {
         initializeComponents();
         createMenuBar();
         layoutComponents();
-        
     }
+
     //instance variables
     String activeFile = null;
 
@@ -35,10 +35,30 @@ public class CodeEditor extends JFrame {
         mainPanel = new JPanel();
         menuBar = new JMenuBar();
         
-        // Initialize the text area with scrolling
-        codeTextArea = new JTextArea();
-        codeTextArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        scrollPane = new JScrollPane(codeTextArea);
+        // Initialize the text pane with scrolling
+        codeTextPane = new JTextPane();  // Changed to JTextPane
+        codeTextPane.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        
+        // Configure the JTextPane for code editing
+        StyledDocument doc = codeTextPane.getStyledDocument();
+        SimpleAttributeSet attrs = new SimpleAttributeSet();
+        StyleConstants.setFontFamily(attrs, "Monospaced");
+        StyleConstants.setFontSize(attrs, 12);
+        ((AbstractDocument) doc).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) 
+                throws BadLocationException {
+                super.insertString(fb, offset, string, attr);
+            }
+            
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) 
+                throws BadLocationException {
+                super.replace(fb, offset, length, text, attrs);
+            }
+        });
+        
+        scrollPane = new JScrollPane(codeTextPane);  // Updated to use codeTextPane
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
     }
@@ -47,7 +67,6 @@ public class CodeEditor extends JFrame {
         // Create File menu
         JMenu fileMenu = new JMenu("File");
         
-        
         // Open file menu item
         JMenuItem openItem = new JMenuItem("Open");
         openItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
@@ -55,8 +74,8 @@ public class CodeEditor extends JFrame {
         
         //save menu item
         JMenuItem saveItem = new JMenuItem("save");
-        saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,InputEvent.CTRL_DOWN_MASK));
-        saveItem.addActionListener(e -> saveFile(activeFile,codeTextArea.getText()));
+        saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
+        saveItem.addActionListener(e -> saveFile(activeFile, codeTextPane.getText()));  // Updated to use codeTextPane
 
         // Exit menu item
         JMenuItem exitItem = new JMenuItem("Exit");
@@ -99,7 +118,7 @@ public class CodeEditor extends JFrame {
         
         if (!filePath.equals("not okay")) {
             String content = readFileAsString(filePath);
-            codeTextArea.setText(content);
+            codeTextPane.setText(content);  // Updated to use codeTextPane
             setTitle("Code Editor - " + new File(filePath).getName());
         }
     }
@@ -114,12 +133,13 @@ public class CodeEditor extends JFrame {
         }
         return "not okay";
     }
+
     private void saveFile(String outputPath, String textData){
         try {
             Files.write(Paths.get(outputPath), textData.getBytes(StandardCharsets.UTF_8));
             System.out.println("file saved successfully");
             System.out.println(outputPath);
-        }catch(IOException e){
+        } catch(IOException e) {
             e.printStackTrace();
         }
     }
