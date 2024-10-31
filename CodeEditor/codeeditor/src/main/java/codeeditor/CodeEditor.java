@@ -55,12 +55,22 @@ public class CodeEditor extends JFrame {
     private void createNewTab(String title) {
         // Create new text pane
         JTextPane newTextPane = new JTextPane();
-        newTextPane.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        File fontFile = new File("CodeEditor\\codeeditor\\src\\Fonts\\Monaco.ttf");
+        try{
+            Font font = Font.createFont(Font.TRUETYPE_FONT, fontFile);
+            Font finalFont = font.deriveFont(Font.PLAIN, 14);
+            newTextPane.setFont(finalFont);
+        }catch(FontFormatException | IOException e){
+            newTextPane.setFont(new Font("Arial", Font.PLAIN, 16));
+        }
+
+        
         
         // Configure the JTextPane for code editing
         StyledDocument doc = newTextPane.getStyledDocument();
         SimpleAttributeSet attrs = new SimpleAttributeSet();
         StyleConstants.setFontFamily(attrs, "Monospaced");
+        isFontAvailable("Monaco");
         StyleConstants.setFontSize(attrs, 16);
         
         // Create line numbers component
@@ -125,36 +135,52 @@ public class CodeEditor extends JFrame {
         
     }
 
+    
+    private void isFontAvailable(String fontName) {
+        String[] fontFamilies = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+        for (String font : fontFamilies) {
+            if (font.equalsIgnoreCase(fontName)) {
+                System.out.println("fontexists");
+            }
+        }
+        System.out.println("font not available"); // Font is not available
+    }
+
+
     private void renameTab(JPanel tabPanel,int index){
+        JPanel temptabPanel = (JPanel)tabbedPane.getTabComponentAt(index);
+        JLabel indexedTitleLabel = (JLabel)temptabPanel.getComponent(0);
 
-        JPanel indexedTabPanel = (JPanel)tabbedPane.getTabComponentAt(index);
-        JLabel titleLabel = (JLabel)indexedTabPanel.getComponent(0);
-
-
-        JTextField editor = new JTextField(titleLabel.getText());
-        Rectangle bounds = titleLabel.getBounds();
+        JTextField editor = new JTextField(indexedTitleLabel.getText());
+        Rectangle bounds = indexedTitleLabel.getBounds();
         editor.setBounds(bounds);
-        titleLabel.setVisible(false);
+        indexedTitleLabel.setVisible(false);
+        
         tabPanel.add(editor);
         editor.requestFocus();
 
 
         editor.addActionListener(e -> {
-            titleLabel.setText(editor.getText() + " "); 
-            titleLabel.setVisible(true);
-            editor.setVisible(false);
+            updateTabTitle(indexedTitleLabel,editor,tabPanel);
         });
 
         editor.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
-                titleLabel.setText(editor.getText() + " "); 
-                titleLabel.setVisible(true);
-                editor.setVisible(false);
+                updateTabTitle(indexedTitleLabel,editor,tabPanel);
             }
         });
 
     }
+    
+    private void updateTabTitle(JLabel label, JTextField editor, JPanel panel) {
+        label.setText(editor.getText().trim() + " ");
+        label.setVisible(true);
+        panel.remove(editor); 
+        panel.revalidate();
+        panel.repaint();
+    }
+
 
     private void closeTab(int index) {
         if (tabbedPane.getTabCount() > 1) {
