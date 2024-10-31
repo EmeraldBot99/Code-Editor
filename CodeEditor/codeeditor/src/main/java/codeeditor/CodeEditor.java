@@ -24,6 +24,8 @@ public class CodeEditor extends JFrame {
     private JTabbedPane tabbedPane;
     private ArrayList<LineNumberComponent> lineNumbers;
     private int activeIndex;
+    private JTree sideMenu;
+    private String openFolder;
 
     public CodeEditor() {
         setTitle("Code Shizard");
@@ -44,6 +46,7 @@ public class CodeEditor extends JFrame {
         filePaths = new ArrayList<>();
         lineNumbers = new ArrayList<>();
         tabbedPane = new JTabbedPane();
+        sideMenu = new JTree();
         
         // Create initial tab
         createNewTab("Untitled");
@@ -113,25 +116,32 @@ public class CodeEditor extends JFrame {
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
                     int tabIndex = tabbedPane.indexAtLocation(e.getX(), e.getY());
-                    renameTab(tabPanel, titleLabel,tabIndex);
+                    renameTab(tabPanel,tabIndex);
                 }
             }
         });
+
+        // file tree
+        
     }
 
-    private void renameTab(JPanel tabPanel,JLabel label,int index){
-        JTextField editor = new JTextField(label.getText());
-        Rectangle bounds = label.getBounds();
+    private void renameTab(JPanel tabPanel,int index){
+
+        JPanel indexedTabPanel = (JPanel)tabbedPane.getTabComponentAt(index);
+        JLabel titleLabel = (JLabel)indexedTabPanel.getComponent(0);
+
+
+        JTextField editor = new JTextField(titleLabel.getText());
+        Rectangle bounds = titleLabel.getBounds();
         editor.setBounds(bounds);
-        label.setVisible(false);
+        titleLabel.setVisible(false);
         tabPanel.add(editor);
         editor.requestFocus();
 
-        tabPanel = (JPanel)tabbedPane.getTabComponentAt(index);
-        JLabel titleLabel = (JLabel)tabPanel.getComponent(0);
+
         editor.addActionListener(e -> {
             titleLabel.setText(editor.getText() + " "); 
-            label.setVisible(true);
+            titleLabel.setVisible(true);
             editor.setVisible(false);
         });
 
@@ -139,7 +149,7 @@ public class CodeEditor extends JFrame {
             @Override
             public void focusLost(FocusEvent e) {
                 titleLabel.setText(editor.getText() + " "); 
-                label.setVisible(true);
+                titleLabel.setVisible(true);
                 editor.setVisible(false);
             }
         });
