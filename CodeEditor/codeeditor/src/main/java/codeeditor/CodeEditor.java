@@ -1,6 +1,7 @@
 package codeeditor;
 
 import javax.swing.*;
+import javax.swing.tree.*;
 import javax.swing.event.*;
 import javax.swing.text.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -135,7 +136,24 @@ public class CodeEditor extends JFrame {
         });
 
         // file tree
-        initializeFileTree();
+
+        sideMenu.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    TreePath path = sideMenu.getPathForLocation(e.getX(), e.getY());
+                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+                    if (node.getUserObject() instanceof FileNode) {
+                        FileNode fileNode = (FileNode) node.getUserObject();
+                        File file = fileNode.getFile(); // Retrieve the File object
+    
+                        System.out.println("Full path: " + file.getAbsolutePath()); // Print the full path
+                    }
+                }
+            }
+        });
+        // initializeFileTree();
+
     }
 
     private void layoutComponents() {
@@ -153,23 +171,56 @@ public class CodeEditor extends JFrame {
         add(mainPanel);
     }
 
-    private void initializeFileTree(){
-        // Initialize side menu with sample nodes
-        DefaultMutableTreeNode root = new DefaultMutableTreeNode("Root");
-        DefaultMutableTreeNode folder1 = new DefaultMutableTreeNode("Folder 1");
-        DefaultMutableTreeNode folder2 = new DefaultMutableTreeNode("Folder 2");
-        
-        folder1.add(new DefaultMutableTreeNode("File 1-1.txt"));
-        folder1.add(new DefaultMutableTreeNode("File 1-2.txt"));
-        folder2.add(new DefaultMutableTreeNode("File 2-1.txt"));
-        folder2.add(new DefaultMutableTreeNode("File 2-2.txt"));
+    private void openFolder(){
+        System.out.println("openfolder call");
+        String openFolderPath = loadFile();
+        File folder = new File(openFolderPath);
 
-        root.add(folder1);
-        root.add(folder2);
+        if (!folder.isDirectory()) {
+            JOptionPane.showMessageDialog(null, "Selected path is not a folder.");
+            return;
+        }
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode(new FileNode(folder));
+        addFolderContents(root, folder);
+
+        
 
         sideMenu.setModel(new DefaultTreeModel(root));
         sideMenu.setPreferredSize(new Dimension(200, 0)); // Set width of the side menu
     }
+
+    private void addFolderContents(DefaultMutableTreeNode parentNode, File folder){
+        File[] files = folder.listFiles();
+        if(files == null){
+            return;
+        }else{
+            for (File file : files){
+                DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(new FileNode(file));
+                if(file.isDirectory()){
+                    addFolderContents(childNode, file);
+                }
+                parentNode.add(childNode); 
+            }
+        }
+    }
+
+    private static class FileNode {
+        private final File file;
+    
+        public FileNode(File file) {
+            this.file = file;
+        }
+    
+        public File getFile() {
+            return file;
+        }
+    
+        @Override
+        public String toString() {
+            return file.getName(); // Only display the file/folder name in the JTree
+        }
+    }
+    
 
     
 
@@ -182,7 +233,7 @@ public class CodeEditor extends JFrame {
             }
         }
         System.out.println("font not available"); // Font is not available
-    }
+    }   
 
 
     private void renameTab(JPanel tabPanel,int index){
@@ -379,6 +430,10 @@ public class CodeEditor extends JFrame {
             saveFile(filePaths.get(activeIndex), codeTextPanes.get(activeIndex).getText());
         });
 
+        JMenuItem openFolderItem = new JMenuItem("Open Folder");
+        openFolderItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_K,InputEvent.CTRL_DOWN_MASK));
+        openFolderItem.addActionListener(e ->{openFolder();});
+
         JMenuItem exitItem = new JMenuItem("Exit");
         exitItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK));
         exitItem.addActionListener(e -> System.exit(0));
@@ -389,6 +444,8 @@ public class CodeEditor extends JFrame {
         fileMenu.add(saveItem);
         fileMenu.addSeparator();
         fileMenu.add(exitItem);
+        fileMenu.addSeparator();
+        fileMenu.add(openFolderItem);
 
         JMenu helpMenu = new JMenu("Help");
         JMenuItem aboutItem = new JMenuItem("About");
@@ -419,6 +476,7 @@ public class CodeEditor extends JFrame {
 
     private String loadFile() {
         JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
         fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
         int result = fileChooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
