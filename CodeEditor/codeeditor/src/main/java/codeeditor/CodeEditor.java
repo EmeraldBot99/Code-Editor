@@ -3,6 +3,9 @@ package codeeditor;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.text.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
@@ -132,10 +135,45 @@ public class CodeEditor extends JFrame {
         });
 
         // file tree
+        initializeFileTree();
+    }
+
+    private void layoutComponents() {
+        mainPanel.setLayout(new BorderLayout());
+        mainPanel.add(tabbedPane, BorderLayout.CENTER);
+        add(mainPanel);
+
+        // Add side menu and tabbed pane to the main panel
+        JSplitPane splitPane = new JSplitPane();
+        splitPane.setLeftComponent(new JScrollPane(sideMenu));
+        splitPane.setRightComponent(tabbedPane);
+        splitPane.setDividerLocation(200); // Set initial position of the divider
+
+        mainPanel.add(splitPane, BorderLayout.CENTER); // Add split pane to the main panel
+        add(mainPanel);
+    }
+
+    private void initializeFileTree(){
+        // Initialize side menu with sample nodes
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode("Root");
+        DefaultMutableTreeNode folder1 = new DefaultMutableTreeNode("Folder 1");
+        DefaultMutableTreeNode folder2 = new DefaultMutableTreeNode("Folder 2");
         
+        folder1.add(new DefaultMutableTreeNode("File 1-1.txt"));
+        folder1.add(new DefaultMutableTreeNode("File 1-2.txt"));
+        folder2.add(new DefaultMutableTreeNode("File 2-1.txt"));
+        folder2.add(new DefaultMutableTreeNode("File 2-2.txt"));
+
+        root.add(folder1);
+        root.add(folder2);
+
+        sideMenu.setModel(new DefaultTreeModel(root));
+        sideMenu.setPreferredSize(new Dimension(200, 0)); // Set width of the side menu
     }
 
     
+
+
     private void isFontAvailable(String fontName) {
         String[] fontFamilies = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
         for (String font : fontFamilies) {
@@ -366,11 +404,7 @@ public class CodeEditor extends JFrame {
         setJMenuBar(menuBar);
     }
 
-    private void layoutComponents() {
-        mainPanel.setLayout(new BorderLayout());
-        mainPanel.add(tabbedPane, BorderLayout.CENTER);
-        add(mainPanel);
-    }
+
 
     private void openFile() {
         String filePath = loadFile();
