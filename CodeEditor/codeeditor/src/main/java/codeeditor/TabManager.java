@@ -1,7 +1,6 @@
 package codeeditor;
 
 import javax.swing.*;
-import javax.swing.text.StyledDocument;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
@@ -15,6 +14,7 @@ public class TabManager {
     private final ArrayList<LineNumberComponent> lineNumbers;
     private final ArrayList<String> filePaths;
     private final SyntaxHighlighter syntaxHighlighter;
+    private final ErrorChecker errorChecker;
 
     public TabManager(CodeEditor editor, JTabbedPane tabbedPane, ArrayList<JTextPane> codeTextPanes, 
                      ArrayList<LineNumberComponent> lineNumbers, ArrayList<String> filePaths,
@@ -25,6 +25,7 @@ public class TabManager {
         this.lineNumbers = lineNumbers;
         this.filePaths = filePaths;
         this.syntaxHighlighter = syntaxHighlighter;
+        this.errorChecker = new ErrorChecker(editor, tabbedPane, codeTextPanes, filePaths);
     }
 
     public void createNewTab(String title) {
@@ -59,8 +60,11 @@ public class TabManager {
     }
 
     private void setupDocumentListener(JTextPane textPane, LineNumberComponent lineNumbers) {
-        textPane.getDocument().addDocumentListener(new DocumentListenerImpl(lineNumbers, 
-            () -> syntaxHighlighter.highlightSyntax(codeTextPanes.size() - 1, codeTextPanes)));
+        textPane.getDocument().addDocumentListener(new DocumentListenerImpl(
+            lineNumbers,
+            () -> syntaxHighlighter.highlightSyntax(codeTextPanes.size() - 1, codeTextPanes),
+            errorChecker
+        ));
     }
 
     private JScrollPane createScrollPane(JTextPane textPane, LineNumberComponent lineNumbers) {
